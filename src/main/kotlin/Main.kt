@@ -11,6 +11,7 @@ suspend fun main(args: Array<String>) = withContext(Dispatchers.IO) {
     val timeCoroutines = measureTimeMillis {
         coroutineResult = Coroutines.find(true, a, b, e)
     }
+    Threads.createTreads(a, b, e)
     val timeThreads = measureTimeMillis {
         threadsResult = Threads.find(a, b, e)
     }

@@ -6,7 +6,7 @@ object Coroutines {
     private val PHI = (1 + sqrt(5.0)) / 2
 
     suspend fun find(maxOrMin: Boolean, a: Double, b: Double, e: Double): Pair<Double, Double> =
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             val step = (b - a) / 4.0
             val f1 = async { findMax(a, a + step, e) }
             val f2 = async { findMax(a + step, a + step * 2, e) }

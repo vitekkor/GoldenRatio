@@ -4,21 +4,30 @@ import java.util.concurrent.ThreadFactory
 import kotlin.concurrent.thread
 import kotlin.math.abs
 import kotlin.math.sqrt
+import kotlin.properties.Delegates
 
 object Threads {
-    //val result = mutableListOf<Double>()
-    val executorService = Executors.newFixedThreadPool(2)
-    private val PHI = (1 + sqrt(5.0)) / 2
-    fun find(a: Double, b: Double, e: Double): Double {
-        var f1: Double = 0.0
-        var f2: Double = 0.0
-        val t1 = executorService.submit {
+    fun createTreads(a: Double, b: Double, e: Double) {
+        t1 = Thread {
             f1 = findMax(a, (b - a) / 2, e)
         }
-        val t2 = executorService.submit {
+        t2 = Thread {
             f2 = findMax((b - a) / 2, b, e)
         }
-        t2.get()
+    }
+
+    //val result = mutableListOf<Double>()
+    private lateinit var t1: Thread
+    private var f1 by Delegates.notNull<Double>()
+
+    private lateinit var t2: Thread
+    private var f2 by Delegates.notNull<Double>()
+
+    private val PHI = (1 + sqrt(5.0)) / 2
+    fun find(a: Double, b: Double, e: Double): Double {
+        t1.start()
+        t2.start()
+        t2.join()
         return maxOf(f1, f2)
     }
 
