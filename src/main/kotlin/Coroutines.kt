@@ -1,33 +1,26 @@
 import kotlinx.coroutines.*
 import kotlin.math.abs
+import kotlin.math.pow
 import kotlin.math.sqrt
 
-object Coroutines {
+class Coroutines(maxOrMin: Boolean, a: Double, b: Double, e: Double, scope: CoroutineScope, private val f: Func) {
     private val PHI = (1 + sqrt(5.0)) / 2
+    private val counters = mutableListOf<Deferred<Pair<Double, Double>>>()
 
-    suspend fun find(maxOrMin: Boolean, a: Double, b: Double, e: Double): Pair<Double, Double> =
-        withContext(Dispatchers.Default) {
-            val step = (b - a) / 4.0
-            val f1 = async { findMax(a, a + step, e) }
-            val f2 = async { findMax(a + step, a + step * 2, e) }
-            val f3 = async { findMax(a + step * 2, a + step * 3, e) }
-            val f4 = async { findMax(a + step * 3, a + step * 4, e) }
-            /*val f5 = async { findMax(a + step * 4, a + step * 5, e) }
-            val f6 = async { findMax(a + step * 5, a + step * 6, e) }
-            val f7 = async { findMax(a + step * 6, a + step * 7, e) }
-            val f8 = async { findMax(a + step * 7, b, e) }*/
-            /*var start = a
-            val jobs: MutableList<Deferred<Pair<Double, Double>>> = mutableListOf()
-            while (start < b) {
-                if (maxOrMin) {
-                    jobs.add(async { findMax(start, start + step, e) })
-                } else {
-                    jobs.add(async { findMin(start, start + step, e) })
-                }
-                start += step
-            }*/
-            return@withContext awaitAll(f1, f2, f3, f4/*, f5, f6, f7, f8*/).maxByOrNull { it.second }!!
+    init {
+        val step = (b - a) / Runtime.getRuntime().availableProcessors().toDouble()
+        var start = a
+        while (start + step < b) {
+            counters.add(scope.async(start = CoroutineStart.LAZY) { findMax(start, start + step, e) })
+            start += step
         }
+        counters.add(scope.async(start = CoroutineStart.LAZY) { findMax(start, b, e) })
+    }
+
+    suspend fun find(): Pair<Double, Double> {
+        counters.forEach { it.start(); yield() }
+        return counters.map { it.await() }.maxByOrNull { it.second }!!
+    }
 
     fun findMin(a: Double, b: Double, e: Double): Pair<Double, Double> {
         var a = a
@@ -45,7 +38,7 @@ object Coroutines {
         return (a + b) / 2 to f((a + b) / 2)
     }
 
-    fun findMax(a: Double, b: Double, e: Double): Pair<Double, Double> {
+    private fun findMax(a: Double, b: Double, e: Double): Pair<Double, Double> {
         var a = a
         var b = b
         var x1: Double

@@ -1,47 +1,40 @@
-import java.util.*
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadFactory
-import kotlin.concurrent.thread
 import kotlin.math.abs
 import kotlin.math.sqrt
-import kotlin.properties.Delegates
 
-object Threads {
-    fun createTreads(a: Double, b: Double, e: Double) {
-        t1 = Thread {
-            f1 = findMax(a, (b - a) / 2, e)
+class Threads(maxOrMin: Boolean, a: Double, b: Double, e: Double, private val f: Func) {
+    private val threads = mutableListOf<Thread>()
+    private val results = mutableListOf<Pair<Double, Double>>()
+
+    init {
+        val step = (b - a) / Runtime.getRuntime().availableProcessors().toDouble()
+        var start = a
+        while (start + step < b) {
+            threads.add(Thread { results.add(findMax(start, start + step, e)) })
+            start += step
         }
-        t2 = Thread {
-            f2 = findMax((b - a) / 2, b, e)
-        }
+        threads.add(Thread { results.add(findMax(start, b, e)) })
     }
-
-    //val result = mutableListOf<Double>()
-    private lateinit var t1: Thread
-    private var f1 by Delegates.notNull<Double>()
-
-    private lateinit var t2: Thread
-    private var f2 by Delegates.notNull<Double>()
 
     private val PHI = (1 + sqrt(5.0)) / 2
-    fun find(a: Double, b: Double, e: Double): Double {
-        t1.start()
-        t2.start()
-        t2.join()
-        return maxOf(f1, f2)
+
+    fun find(): Pair<Double, Double> {
+        threads.forEach(Thread::start)
+        threads.forEach(Thread::join)
+        Thread.yield()
+        return results.maxByOrNull { it.second }!!
     }
 
-    fun findMax(a: Double, b: Double, e: Double): Double {
-        var a = a
-        var b = b
+    fun findMax(a: Double, b: Double, e: Double): Pair<Double, Double> {
+        var a1 = a
+        var b1 = b
         var x1: Double
         var x2: Double
         while (true) {
-            x1 = b - (b - a) / PHI
-            x2 = a + (b - a) / PHI
-            if (f(x1) <= f(x2)) a = x1 else b = x2
-            if (abs(b - a) < e) break
+            x1 = b1 - (b1 - a1) / PHI
+            x2 = a1 + (b1 - a1) / PHI
+            if (f(x1) <= f(x2)) a1 = x1 else b1 = x2
+            if (abs(b1 - a1) < e) break
         }
-        return (a + b) / 2
+        return (a1 + b1) / 2 to f((a1 + b1) / 2)
     }
 }
