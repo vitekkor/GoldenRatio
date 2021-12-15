@@ -1,18 +1,18 @@
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
 import kotlin.math.abs
 import kotlin.math.sqrt
 
-class Threads(maxOrMin: Boolean, a: Double, b: Double, e: Double, private val f: Func) {
+class Threads(private val maxOrMin: Boolean, a: Double, b: Double, e: Double, private val f: Func) {
     private val threads = mutableListOf<Thread>()
     private val results = mutableListOf<Pair<Double, Double>>()
 
     init {
-        val step = (b - a) / Runtime.getRuntime().availableProcessors().toDouble()
-        var start = a
-        while (start + step < b) {
-            threads.add(Thread { results.add(findMax(start, start + step, e)) })
-            start += step
+        val processors = Runtime.getRuntime().availableProcessors()
+        val step = (b - a) / processors
+        for (i in 1..processors) {
+            threads.add(Thread { results.add(find(a + (i - 1) * step, a + (i) * step, e)) })
         }
-        threads.add(Thread { results.add(findMax(start, b, e)) })
     }
 
     private val PHI = (1 + sqrt(5.0)) / 2
@@ -21,20 +21,25 @@ class Threads(maxOrMin: Boolean, a: Double, b: Double, e: Double, private val f:
         threads.forEach(Thread::start)
         threads.forEach(Thread::join)
         Thread.yield()
-        return results.maxByOrNull { it.second }!!
+        return if (maxOrMin) results.maxByOrNull { it.second }!! else results.minByOrNull { it.second }!!
     }
 
-    fun findMax(a: Double, b: Double, e: Double): Pair<Double, Double> {
-        var a1 = a
-        var b1 = b
+    private fun find(a: Double, b: Double, e: Double): Pair<Double, Double> {
+        var a = a
+        var b = b
         var x1: Double
         var x2: Double
-        while (true) {
-            x1 = b1 - (b1 - a1) / PHI
-            x2 = a1 + (b1 - a1) / PHI
-            if (f(x1) <= f(x2)) a1 = x1 else b1 = x2
-            if (abs(b1 - a1) < e) break
+        while (abs(b - a) > e) {
+            x1 = b - (b - a) / PHI
+            x2 = a + (b - a) / PHI
+            val f1 = f(x1)
+            val f2 = f(x2)
+            if (maxOrMin) {
+                if (f1 <= f2) a = x1 else b = x2
+            } else {
+                if (f1 >= f2) a = x1 else b = x2
+            }
         }
-        return (a1 + b1) / 2 to f((a1 + b1) / 2)
+        return (a + b) / 2 to f((a + b) / 2)
     }
 }
