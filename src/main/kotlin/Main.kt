@@ -8,7 +8,7 @@ import kotlin.system.measureNanoTime
 
 suspend fun main(args: Array<String>) = withContext(Dispatchers.Default) {
     val a = 0.0 //2.0e+11
-    val b = 50.0 //10.0e+21
+    val b = 25.0 //10.0e+21
     val e = 1e-10 //1e+7
     val maxOrMin = true
 
@@ -59,7 +59,7 @@ fun fh(x: Double): Double {
 
 fun f(x: Double): Double {
     //return sin(x.pow(0.1)) * x.pow(0.9) + x.pow(10.0) / (x.pow(-100.0) - x.pow(14.0))
-    return integrate(0.0, x, x.toInt() * 10000) { f2(it) }
+    return integrate(0.0, x, (x * 10000).toInt()) { f2(it) }
 }
 
 fun f2(x: Double): Double {
