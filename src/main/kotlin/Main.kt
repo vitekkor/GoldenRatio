@@ -14,19 +14,20 @@ suspend fun main(args: Array<String>) = withContext(Dispatchers.Default) {
 
     val n = (b - a) / 0.1 //10000
     val h = (b - a) / n
+    /* построение графика функции*/
     val data = mapOf("x" to List(n.toInt()) { a + it * h }, "y" to List(n.toInt()) { f(a + it * h) })
     val p = letsPlot(data) + geomLine { x = "x"; y = "y" } + ggsize(1000, 500)
 
     ggsave(p, "plot.png")
 
     var coroutineResult: Pair<Double, Double>
-    val coroutines = Coroutines(maxOrMin, a, b, e, this) { x -> f(x) } // integrate(0.0, x, 10000) { f_(it) }
+    val coroutines = Coroutines(maxOrMin, a, b, e, this) { x -> f(x) } // инициализация coroutines
 
     var threadsResult: Pair<Double, Double>
-    val threads = Threads(maxOrMin, a, b, e) { x -> f(x) }
+    val threads = Threads(maxOrMin, a, b, e) { x -> f(x) } // инициализация java threads
 
 
-    val timeCoroutines = measureNanoTime {
+    val timeCoroutines = measureNanoTime { // замеряем время
         coroutineResult = coroutines.find()
     } / 1e6
 
@@ -51,10 +52,6 @@ suspend fun main(args: Array<String>) = withContext(Dispatchers.Default) {
                 "Difference coroutines sequential: ${timeSequential - timeCoroutines}ms\n" +
                 "Difference coroutines threads: ${timeThreads - timeCoroutines}ms"
     )
-}
-
-fun fh(x: Double): Double {
-    return (x + 1).pow(100.0) * exp(-5.0 * x.pow(100)) * x.pow(2.0)
 }
 
 fun f(x: Double): Double {
